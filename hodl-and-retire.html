@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>HODL&amp;Retire</title>
+<style>
+:root {
+  --bg:#0a0806; --bg2:#100c08; --card:#15110c;
+  --line:#2b2218; --line2:#3a2d1f;
+  --ink:#f4e9d4; --ink2:#c9b896; --muted:#7a6a52;
+  --orange:#f7931a; --green:#5fe88f; --red:#ff5a5a;
+  --amber:#ffc857; --blue:#6ec5ff;
+  --mono: ui-monospace, Menlo, Monaco, Consolas, "Courier New", monospace;
+  --ui: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html, body {
+  background:var(--bg); color:var(--ink);
+  font-family:var(--mono); font-size:14px; line-height:1.5;
+  min-height:100vh; -webkit-font-smoothing:antialiased;
+}
+.app { max-width:540px; margin:0 auto; padding:12px 12px 60px; padding-top:calc(12px + env(safe-area-inset-top)); }
+
+/* HEADER */
+header {
+  border:1px solid var(--line); background:var(--card);
+  padding:11px 14px; margin-bottom:10px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.head-left { display:flex; align-items:center; gap:10px; }
+.head-mark { color:var(--orange); font-size:20px; font-weight:800; }
+.head-title { font-size:13px; font-weight:800; letter-spacing:0.04em; }
+.head-title .dot { color:var(--orange); }
+.head-tag { font-size:9px; color:var(--muted); letter-spacing:0.14em; text-transform:uppercase; }
+
+/* STATUS HERO */
+.status {
+  background:var(--card); border:1px solid var(--line2);
+  margin-bottom:10px; overflow:hidden;
+}
+.status-main { padding:14px 16px; text-align:center; }
+.status-tag {
+  font-size:9px; color:var(--muted);
+  letter-spacing:0.16em; text-transform:uppercase;
+  margin-bottom:4px;
+}
+.status-tag span { color:var(--orange); }
+.status-verdict {
+  font-size:32px; font-weight:800; letter-spacing:-0.02em;
+  line-height:1.05; margin:4px 0 8px;
+}
+.status-verdict.good { color:var(--green); }
+.status-verdict.warn { color:var(--amber); }
+.status-verdict.bad { color:var(--red); }
+.status-msg {
+  font-size:12px; color:var(--ink2);
+  line-height:1.5; font-family:var(--ui);
+}
+.status-msg b { color:var(--orange); font-weight:600; }
+.status-msg b.good { color:var(--green); }
+.status-msg b.bad { color:var(--red); }
+
+.status-meta {
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  border-top:1px solid var(--line); background:var(--bg2);
+}
+.status-meta > div {
+  padding:10px 4px; text-align:center; border-right:1px solid var(--line);
+}
+.status-meta > div:last-child { border-right:0; }
+.status-meta .lbl {
+  font-size:9px; color:var(--muted);
+  letter-spacing:0.1em; text-transform:uppercase; margin-bottom:3px;
+}
+.status-meta .val {
+  font-size:14px; font-weight:700; color:var(--ink);
+}
+.status-meta .val.good { color:var(--green); }
+.status-meta .val.bad { color:var(--red); }
+.status-meta .val.warn { color:var(--amber); }
+
+/* CHART */
+.chart-card { background:var(--card); border:1px solid var(--line); margin-bottom:10px; padding:12px; }
+.chart-head {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:10px; gap:8px; flex-wrap:wrap;
+}
+.chart-title {
+  font-size:11px; font-weight:700;
+  letter-spacing:0.12em; text-transform:uppercase;
+}
+svg.chart { width:100%; height:200px; display:block; }
+.cg { stroke:rgba(247,147,26,0.06); stroke-width:1; }
+.cl { fill:var(--muted); font-size:9px; font-family:var(--mono); }
+.chart-legend {
+  display:flex; gap:12px; margin-top:10px;
+  font-size:9px; color:var(--muted); flex-wrap:wrap;
+  letter-spacing:0.06em; text-transform:uppercase;
+}
+.chart-legend span { display:inline-flex; align-items:center; gap:4px; }
+.chart-legend i { width:9px; height:9px; }
+
+/* CONFIG (inputs) */
+.config { background:var(--card); border:1px solid var(--line); margin-bottom:10px; }
+.config-head {
+  padding:11px 14px; background:var(--bg2); border-bottom:1px solid var(--line);
+  font-size:11px; font-weight:700;
+  color:var(--orange); letter-spacing:0.12em; text-transform:uppercase;
+}
+.config-body { padding:13px 14px; }
+.input { margin-bottom:11px; }
+.input:last-child { margin-bottom:0; }
+.input label { display:block; font-size:10px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:5px; }
+.input .hint { font-size:10px; color:var(--muted); font-family:var(--ui); margin-top:4px; line-height:1.4; }
+.field { position:relative; display:flex; align-items:center; }
+.field .pre, .field .suf { position:absolute; color:var(--orange); font-size:12px; font-weight:700; pointer-events:none; }
+.field .pre { left:11px; } .field .suf { right:11px; }
+.field input {
+  width:100%; background:var(--bg2); border:1px solid var(--line2);
+  color:var(--orange); font-family:var(--mono); font-size:15px; font-weight:700;
+  padding:10px 36px 10px 11px;
+}
+.field input.pad-l { padding-left:24px; }
+.field input:focus { outline:0; border-color:var(--orange); }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+input[type="number"] { -moz-appearance:textfield; }
+.row2 { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; }
+.row2 .field input, .row3 .field input { font-size:13px; }
+
+details.adv { margin-top:11px; border-top:1px solid var(--line); padding-top:10px; }
+details.adv summary {
+  cursor:pointer; list-style:none;
+  font-size:10px; color:var(--muted);
+  letter-spacing:0.12em; text-transform:uppercase; font-weight:700;
+  display:flex; justify-content:space-between;
+}
+details.adv summary::-webkit-details-marker { display:none; }
+details.adv summary::after { content:"[+]"; color:var(--orange); }
+details.adv[open] summary::after { content:"[−]"; }
+details.adv[open] summary { color:var(--orange); margin-bottom:10px; }
+
+/* TIMELINE */
+.tbl-card { background:var(--card); border:1px solid var(--line); margin-bottom:10px; overflow:hidden; }
+.tbl-head {
+  padding:11px 14px; background:var(--bg2); border-bottom:1px solid var(--line);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.tbl-head h2 {
+  font-size:11px; font-weight:700;
+  letter-spacing:0.12em; text-transform:uppercase;
+}
+.tbl-head .hint { font-size:9px; color:var(--muted); letter-spacing:0.06em; text-transform:uppercase; }
+.tbl-reset {
+  background:transparent; border:1px solid var(--line2); color:var(--muted);
+  font-family:var(--mono); font-size:9px; font-weight:700;
+  padding:4px 9px; cursor:pointer; text-transform:uppercase; letter-spacing:0.1em;
+}
+.tbl-reset:active { color:var(--orange); border-color:var(--orange); }
+.tbl-scroll { max-height:540px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+table { width:100%; border-collapse:collapse; font-size:11.5px; }
+th {
+  text-align:right; padding:7px 5px;
+  font-size:8.5px; font-weight:600; color:var(--muted);
+  letter-spacing:0.05em; text-transform:uppercase;
+  background:var(--bg2); border-bottom:1px solid var(--line);
+  position:sticky; top:0; white-space:nowrap;
+}
+th:first-child { text-align:left; padding-left:12px; }
+th:last-child { padding-right:12px; }
+td { padding:7px 5px; text-align:right; border-bottom:1px solid var(--line); font-weight:500; white-space:nowrap; }
+td:first-child { text-align:left; font-weight:700; padding-left:12px; }
+td:last-child { padding-right:12px; }
+tr:last-child td { border-bottom:0; }
+tr.pre td { color:var(--muted); }
+tr.healthy td { background:rgba(95,232,143,0.02); }
+tr.warn td { background:rgba(255,200,87,0.07); }
+tr.fail td { background:rgba(255,90,90,0.1); color:var(--red); }
+tr.paused td { background:rgba(122,106,82,0.09); opacity:0.65; }
+tr.paused td:first-child::after { content:" ⏸"; color:var(--orange); }
+tr.retire td:first-child::before { content:"▶ "; color:var(--orange); }
+.c-price { color:var(--orange); font-weight:600; }
+.c-stack { color:var(--ink); font-weight:600; }
+.c-debt { color:var(--muted); }
+.c-debt.ovr { color:var(--amber); font-weight:700; }
+.c-borrow { color:var(--ink2); font-weight:600; }
+.c-borrow.zero { color:var(--muted); font-weight:400; }
+.c-cold { color:var(--green); font-weight:600; }
+.c-cold.zero { color:var(--muted); font-weight:400; }
+.c-cold.ovr { color:var(--amber); }
+.c-ltv.healthy { color:var(--green); font-weight:700; }
+.c-ltv.warn { color:var(--amber); font-weight:700; }
+.c-ltv.fail { color:var(--red); font-weight:700; }
+tr[data-pausable="1"] { cursor:pointer; }
+tr[data-pausable="1"]:active td { background:rgba(247,147,26,0.06); }
+.edit-btn {
+  background:transparent; border:1px dashed transparent; border-radius:3px;
+  color:inherit; font:inherit; font-weight:inherit;
+  padding:2px 5px; cursor:pointer; text-align:right; min-width:54px;
+}
+.edit-btn:active { border-color:var(--line2); }
+.edit-input {
+  background:var(--bg2); border:1px solid var(--orange); border-radius:3px;
+  color:var(--orange); font:inherit; font-weight:700;
+  text-align:right; width:92px; padding:2px 4px; outline:0;
+}
+.legend-strip {
+  padding:7px 12px; background:var(--bg2); border-top:1px solid var(--line);
+  font-size:9px; color:var(--muted);
+  display:flex; gap:10px; flex-wrap:wrap;
+  letter-spacing:0.06em; text-transform:uppercase;
+}
+.legend-strip span { display:inline-flex; align-items:center; gap:4px; }
+.legend-strip i { width:8px; height:8px; }
+.legend-strip i.healthy { background:rgba(95,232,143,0.4); border:1px solid var(--green); }
+.legend-strip i.warn { background:var(--amber); }
+.legend-strip i.fail { background:var(--red); }
+.legend-strip i.paused { background:rgba(247,147,26,0.15); border:1px dashed var(--orange); }
+.legend-strip i.ovr { background:var(--amber); border:1px dashed var(--amber); }
+
+/* HOW TO */
+.howto {
+  background:var(--card); border:1px solid var(--line);
+  padding:12px 14px; margin-bottom:10px;
+  font-family:var(--ui); font-size:12.5px; line-height:1.55; color:var(--ink2);
+}
+.howto h3 {
+  font-family:var(--mono); font-size:10px; font-weight:700;
+  color:var(--orange); letter-spacing:0.14em; text-transform:uppercase; margin-bottom:8px;
+}
+.howto p { margin-bottom:7px; }
+.howto p:last-child { margin-bottom:0; }
+.howto b { color:var(--orange); font-weight:600; }
+
+.warn-box {
+  background:rgba(255,90,90,0.06); border:1px solid rgba(255,90,90,0.25);
+  padding:10px 12px; font-family:var(--ui); font-size:11px;
+  color:var(--ink2); line-height:1.5; margin:12px 0;
+}
+.warn-box b {
+  display:block; color:var(--red); font-family:var(--mono);
+  font-size:9px; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:3px;
+}
+footer {
+  text-align:center; color:var(--muted); font-size:9px;
+  margin-top:14px; letter-spacing:0.14em; text-transform:uppercase;
+}
+footer i { color:var(--orange); font-style:normal; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="head-left">
+      <span class="head-mark">₿</span>
+      <span class="head-title">HODL<span class="dot">&amp;</span>RETIRE</span>
+    </div>
+    <span id="head-tag" class="head-tag">Power Law Model · Ledn</span>
+  </header>
+
+  <!-- STATUS HERO -->
+  <div class="status">
+    <div class="status-main">
+      <div class="status-tag">▸ <span>Scenario</span></div>
+      <div id="verdict" class="status-verdict good">—</div>
+      <div id="verdict-msg" class="status-msg">Set your plan below.</div>
+    </div>
+    <div class="status-meta">
+      <div>
+        <div class="lbl">Lasts Until</div>
+        <div id="m-lasts" class="val">—</div>
+      </div>
+      <div>
+        <div class="lbl">Final Unpledged ₿</div>
+        <div id="m-back" class="val">—</div>
+      </div>
+      <div>
+        <div class="lbl">Peak Agg LTV</div>
+        <div id="m-peak" class="val">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-card">
+    <div class="chart-head">
+      <div class="chart-title">▸ Unpledged vs Pledged BTC</div>
+    </div>
+    <svg id="chart" class="chart" viewBox="0 0 400 200" preserveAspectRatio="none"></svg>
+    <div class="chart-legend">
+      <span style="color:var(--green)"><i style="background:var(--green)"></i>Unpledged</span>
+      <span style="color:var(--blue)"><i style="background:var(--blue)"></i>Pledged</span>
+      <span style="color:var(--muted)"><i style="background:transparent;border-top:1px dashed var(--muted);height:0;width:9px"></i>Total stack</span>
+      <span style="color:var(--orange)"><i style="background:var(--orange)"></i>Retire</span>
+    </div>
+  </div>
+
+  <!-- HOW TO -->
+  <div class="howto">
+    <h3>▸ How It Works</h3>
+    <p>Your BTC follows the <b>power law</b> price model — the most-likely long-run projection. Setting <b>Today's BTC Price</b> anchors the curve so it passes through that point right now; the future path keeps its power-law shape from there.</p>
+    <p>Each retirement year opens a new Ledn loan at <b>50% LTV</b>. The new draw funds your <b>annual budget plus the interest accrued on all prior loans</b> — so old tranches stay flat at their original principal and never compound. Only the newest year's loan grows.</p>
+    <p>Optional: set <b>Buy More BTC %</b> to spend a slice of each year's borrow on more BTC instead of expenses. Loan size stays the same — you just live a bit leaner in exchange for compounding stack growth.</p>
+    <p><b>APR decays over time</b> from your Start rate toward your Floor rate as the BTC-backed lending market matures (S&amp;P-rated platforms, institutional capital, more competition). This compresses interest service costs over the decades.</p>
+    <p>As price rises, each tranche's LTV decays. When it falls under <b>30%</b>, surplus collateral is reclaimed back to your unpledged stack — sats stay yours, loans stay open.</p>
+    <p>The <b>Borrow</b> column shows that year's new draw (budget + interest serviced). <b>Debt</b> shows total outstanding across all tranches. <b>Agg LTV</b> is total debt ÷ total stack value — not per-tranche. <b>Tap a year</b> to pause that year's borrow. <b>Tap Debt or Unpledged ₿</b> to override.</p>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="config">
+    <div class="config-head">▸ Your Plan</div>
+    <div class="config-body">
+      <div class="row2">
+        <div class="input"><label>Your BTC Stack</label>
+          <div class="field"><input type="number" id="p-btc" value="1.5" step="0.01" min="0"><span class="suf">₿</span></div></div>
+        <div class="input"><label>Today's BTC Price</label>
+          <div class="field"><span class="pre">$</span><input type="number" id="p-px" class="pad-l" value="90000" step="1000" min="0"></div></div>
+      </div>
+      <div class="row2" style="margin-top:11px">
+        <div class="input"><label>Retire Year</label>
+          <div class="field"><input type="number" id="p-yr" value="2036" step="1" min="2025" max="2070"></div></div>
+        <div class="input"><label>Annual Budget (yr1)</label>
+          <div class="field"><span class="pre">$</span><input type="number" id="p-budget" class="pad-l" value="120000" step="5000" min="0"></div></div>
+      </div>
+      <div class="input" style="margin-top:11px">
+        <label>Buy More BTC With Each Borrow</label>
+        <div class="field"><input type="number" id="p-buy" value="0" step="1" min="0" max="50"><span class="suf">%</span></div>
+        <div class="hint">Spend X% of each borrow on BTC instead of expenses. Your spendable cash drops by X% but your stack grows year over year. Try 4–8%.</div>
+      </div>
+
+      <details class="adv">
+        <summary>Advanced (APR, LTV, inflation, reclaim)</summary>
+        <div class="row3" style="margin-top:10px">
+          <div class="input"><label>Inflation %</label>
+            <div class="field"><input type="number" id="p-inf" value="7" step="0.5" min="0"></div></div>
+          <div class="input"><label>Start APR %</label>
+            <div class="field"><input type="number" id="p-apr1" value="12" step="0.5" min="0"></div></div>
+          <div class="input"><label>Floor APR %</label>
+            <div class="field"><input type="number" id="p-apr0" value="6" step="0.5" min="0"></div></div>
+          <div class="input"><label>Safe LTV %</label>
+            <div class="field"><input type="number" id="p-ltv" value="50" step="5" min="5" max="80"></div></div>
+          <div class="input"><label>Reclaim Below %</label>
+            <div class="field"><input type="number" id="p-rc" value="30" step="1" min="0" max="49"></div></div>
+          <div class="input"><label>Horizon (yrs)</label>
+            <div class="field"><input type="number" id="p-horizon" value="40" step="1" min="10" max="60"></div></div>
+        </div>
+        <div class="hint" style="margin-top:6px;font-family:var(--ui)">APR decays exponentially from <b>Start</b> toward <b>Floor</b> as the BTC-backed lending market matures (factor 0.95/yr — roughly half-decay in 14 years).</div>
+      </details>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="tbl-card">
+    <div class="tbl-head">
+      <h2>▸ Timeline</h2>
+      <button id="reset" class="tbl-reset">Reset</button>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr>
+          <th>Year</th><th>Price</th><th>Stack$</th>
+          <th>Borrow</th><th>Debt</th><th>Pledged ₿</th><th>Unpledged ₿</th><th title="Aggregate LTV: total debt ÷ total stack value">Agg LTV</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="legend-strip">
+      <span><i class="healthy"></i>Healthy</span>
+      <span><i class="warn"></i>Tight</span>
+      <span><i class="fail"></i>Fails</span>
+      <span><i class="paused"></i>Paused</span>
+      <span><i class="ovr"></i>Override</span>
+    </div>
+  </div>
+
+  <div class="warn-box">
+    <b>⚠ Not Advice</b>
+    Power law is a statistical model that can break. Ledn loans carry margin calls, variable APR, and counterparty risk. Educational projection only.
+  </div>
+
+  <footer><i>◆</i> Power Law Bottom · Ledn Mechanics <i>◆</i></footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ─── CONSTANTS ───────────────────────────────────────────
+  var GENESIS = new Date(Date.UTC(2009, 0, 3));
+  var DAY_MS = 86400000;
+  var TODAY = new Date();
+  var WARN_M = 0.10;
+  var APR_DECAY = 0.95;  // per-year decay: apr = floor + (start-floor) × 0.95^yrs
+  // Santostasi power-law model intercept (centerline fair value)
+  var INTERCEPT = -1.779;
+
+  // ─── STATE ───────────────────────────────────────────────
+  var state = {
+    btc: 1.5, btcPrice: 90000,
+    retireYr: 2036, budget: 120000,
+    infl: 7, apr1: 12, apr0: 6, ltv: 50, rc: 30,
+    buyPct: 0,  // % of each gross borrow used to DCA more BTC
+    horizon: 40, slope: 5.566,
+    pauses: {}, debtOvr: {}, rcOvr: {}
+  };
+
+  // ─── HELPERS ─────────────────────────────────────────────
+  function $(id) { return document.getElementById(id); }
+  function setText(id, t) { var el = $(id); if (el) el.textContent = t; }
+  function setHTML(id, h) { var el = $(id); if (el) el.innerHTML = h; }
+  function readNum(id, fb) { var el = $(id); if (!el) return fb; var v = parseFloat(el.value); return isNaN(v) ? fb : v; }
+  function readInt(id, fb) { var el = $(id); if (!el) return fb; var v = parseInt(el.value, 10); return isNaN(v) ? fb : v; }
+  function money(n) {
+    if (!isFinite(n) || isNaN(n)) return "$0";
+    var a = Math.abs(n), s = n < 0 ? "−" : "";
+    if (a >= 1e9) return s + "$" + (a/1e9).toFixed(2) + "B";
+    if (a >= 1e6) return s + "$" + (a/1e6).toFixed(2) + "M";
+    if (a >= 1e3) return s + "$" + Math.round(a/1e3) + "K";
+    return s + "$" + Math.round(a).toLocaleString();
+  }
+  function btcFmt(n) {
+    if (!isFinite(n) || isNaN(n) || n < 1e-8) return "0";
+    if (n < 0.001) return n.toFixed(6);
+    if (n < 1) return n.toFixed(4);
+    return n.toFixed(3);
+  }
+
+  // ─── PRICE (Power Law Model centerline) ────────────────────────
+  // The Santostasi power-law model is the most-likely projection.
+  // Today's actual BTC price (if set) anchors the curve so it passes
+  // through that point today; the curve's shape (slope) is preserved.
+  function modelPriceAt(year) {
+    var d = new Date(Date.UTC(year, 5, 30));
+    var yrs = (d - GENESIS) / DAY_MS / 365.25;
+    return Math.pow(10, INTERCEPT) * Math.pow(yrs, state.slope);
+  }
+  function priceAt(year) {
+    var model = modelPriceAt(year);
+    if (state.btcPrice > 0) {
+      var todayModel = modelPriceAt(TODAY.getFullYear());
+      if (todayModel > 0) model = model * (state.btcPrice / todayModel);
+    }
+    return model;
+  }
+
+  // ─── SIMULATION ──────────────────────────────────────────
+  function simulate() {
+    var startYr = TODAY.getFullYear();
+    var endYr = startYr + state.horizon - 1;
+    var retireYr = state.retireYr;
+    var inf = state.infl / 100;
+    var apr1 = state.apr1 / 100;
+    var apr0 = state.apr0 / 100;
+    var ltv = state.ltv / 100;
+    var rcLine = state.rc / 100;
+    var rcOn = rcLine > 0;
+
+    var btc = state.btc;
+    var tranches = [];
+    var rows = [];
+    var firstFail = null;
+    var totalBack = 0;
+    var peakLtv = 0;
+    var tRet = 0;
+
+    for (var year = startYr; year <= endYr; year++) {
+      var price = priceAt(year);
+      var stackVal = btc * price;
+      var isPre = year < retireYr;
+      var isPaused = !!state.pauses[year];
+      var exp = isPre ? 0 : state.budget * Math.pow(1 + inf, tRet);
+      // APR decays continuously from start year (2025) toward floor.
+      // By year 15 the rate is roughly halfway between start and floor.
+      var tApr = year - startYr;
+      var apr = apr0 + (apr1 - apr0) * Math.pow(APR_DECAY, tApr);
+
+      // 1. Compute interest accrued this year on every open tranche, BUT don't
+      // capitalize it. In retirement, each new yearly borrow services the
+      // accumulated interest on all prior tranches plus funds living expenses.
+      // So prior tranches stay flat at their original principal; only the
+      // newest tranche grows year-over-year.
+      var interestThisYear = 0;
+      for (var i = 0; i < tranches.length; i++) {
+        interestThisYear += tranches[i].balance * apr;
+      }
+
+      // In pre-retirement years (no new borrow to service it), accrued
+      // interest IS capitalized into the existing tranches — there's no
+      // mechanism to pay it from a fresh draw.
+      if (isPre || isPaused) {
+        for (var ic = 0; ic < tranches.length; ic++) {
+          tranches[ic].balance *= (1 + apr);
+        }
+      }
+
+      // 2. Open new tranche — sized to fund living expenses PLUS the year's
+      // interest on all prior tranches. Each year's borrow is its own loan.
+      // Failure: not enough free BTC left to collateralize at safe LTV.
+      var currentPledged = 0;
+      for (var ci = 0; ci < tranches.length; ci++) currentPledged += tranches[ci].pledged;
+      var freeBtc = btc - currentPledged;
+      var couldOpen = !isPre && !isPaused && price > 0 && exp > 0;
+      var openFailed = false;
+      var newBorrow = 0;
+      var newBtcBought = 0;
+      if (couldOpen) {
+        // Borrow exactly what's needed for expenses + interest service —
+        // unchanged loan size. The Buy% then re-allocates a slice of that
+        // same borrowed cash to buy more BTC instead of spending it on
+        // expenses (you live a bit leaner in exchange for stack growth).
+        newBorrow = exp + interestThisYear;
+        var buyFraction = state.buyPct / 100;
+        if (buyFraction < 0) buyFraction = 0;
+        if (buyFraction > 0.5) buyFraction = 0.5;  // safety cap
+        var buyDollars = newBorrow * buyFraction;
+        var needPledge = newBorrow / (price * ltv);
+        if (needPledge <= freeBtc + 1e-9) {
+          tranches.push({ balance: newBorrow, pledged: needPledge });
+          // Re-allocate buyDollars from the borrow toward BTC. The BTC goes
+          // straight to cold (unpledged). Your spendable cash this year is
+          // newBorrow × (1 − buyFraction), but debt is unchanged.
+          if (buyDollars > 0 && price > 0) {
+            newBtcBought = buyDollars / price;
+            btc += newBtcBought;
+          }
+        } else {
+          openFailed = true;
+        }
+      }
+
+      // 3. Reclaim sats from over-collateralized tranches
+      var autoBack = 0, reclaimables = [];
+      if (rcOn) {
+        for (var j = 0; j < tranches.length; j++) {
+          var tr = tranches[j];
+          if (tr.pledged <= 0) continue;
+          var curLtv = tr.balance / (tr.pledged * price);
+          if (curLtv < rcLine) {
+            var needed = tr.balance / (price * ltv);
+            var surplus = tr.pledged - needed;
+            if (surplus > 1e-12) {
+              reclaimables.push({ tr: tr, surplus: surplus, needed: needed });
+              autoBack += surplus;
+            }
+          }
+        }
+      }
+      var back;
+      var rOvr = state.rcOvr[year];
+      if (rOvr !== undefined) {
+        back = Math.max(0, Math.min(rOvr, autoBack));
+        if (autoBack > 0) {
+          var ratio = back / autoBack;
+          for (var k = 0; k < reclaimables.length; k++) reclaimables[k].tr.pledged -= reclaimables[k].surplus * ratio;
+        }
+      } else {
+        back = autoBack;
+        for (var k2 = 0; k2 < reclaimables.length; k2++) reclaimables[k2].tr.pledged = reclaimables[k2].needed;
+      }
+      totalBack += back;
+
+      // 4. Aggregate
+      var debt = 0, totalPledged = 0;
+      for (var m = 0; m < tranches.length; m++) {
+        debt += tranches[m].balance;
+        totalPledged += tranches[m].pledged;
+      }
+      var autoDebt = debt;
+
+      // 5. Debt override (end-of-year target)
+      var dOvr = state.debtOvr[year];
+      if (dOvr !== undefined && Math.abs(dOvr - autoDebt) > 1) {
+        if (autoDebt > 1e-6) {
+          var sc = dOvr / autoDebt;
+          for (var n = 0; n < tranches.length; n++) tranches[n].balance *= sc;
+          totalPledged = 0;
+          for (var n2 = 0; n2 < tranches.length; n2++) totalPledged += tranches[n2].pledged;
+        } else if (dOvr > 1e-6) {
+          var newP = dOvr / (price * ltv);
+          tranches.push({ balance: dOvr, pledged: newP });
+          totalPledged += newP;
+        }
+        debt = dOvr;
+      }
+
+      // Stack value now reflects any BTC bought this year — use updated btc
+      stackVal = btc * price;
+      var cap = ltv * stackVal;
+      var cushion = cap - debt;
+      var aggLtv = stackVal > 0 && debt > 0 ? (debt / stackVal * 100) : 0;
+      if (aggLtv > peakLtv) peakLtv = aggLtv;
+      var cold = btc - totalPledged;
+      if (cold < 0) cold = 0;
+
+      var status;
+      if (isPaused) status = "paused";
+      else if (openFailed || cushion < 0) status = "fail";
+      else if (debt < 1 && isPre) status = "pre";
+      else if (cushion < cap * WARN_M) status = "warn";
+      else status = "healthy";
+      if (status === "fail" && firstFail === null) firstFail = year;
+
+      rows.push({
+        year: year, price: price, stack: stackVal,
+        exp: exp, interest: interestThisYear, borrow: newBorrow,
+        debt: debt, autoDebt: autoDebt,
+        pledged: totalPledged, cold: cold,
+        ltv: aggLtv, cushion: cushion, status: status,
+        isPre: isPre, isPaused: isPaused, isRetire: year === retireYr,
+        back: back, autoBack: autoBack
+      });
+      if (!isPre) tRet++;
+    }
+    return {
+      rows: rows, firstFail: firstFail, totalBack: totalBack,
+      peakLtv: peakLtv, retireYr: retireYr, endYr: endYr, startYr: startYr,
+      finalCold: rows[rows.length - 1].cold,
+      finalPledged: rows[rows.length - 1].pledged,
+      finalStack: btc,  // final stack after any DCA buys
+      btcBought: btc - state.btc  // net BTC accumulated via buy strategy
+    };
+  }
+
+  // ─── READ INPUTS ─────────────────────────────────────────
+  function readInputs() {
+    state.btc = readNum("p-btc", 1.5);
+    state.btcPrice = readNum("p-px", 90000);
+    state.retireYr = readInt("p-yr", 2036);
+    state.budget = readNum("p-budget", 120000);
+    state.infl = readNum("p-inf", 7);
+    state.apr1 = readNum("p-apr1", 12);
+    state.apr0 = readNum("p-apr0", 6);
+    state.ltv = readNum("p-ltv", 50);
+    state.rc = readNum("p-rc", 30);
+    state.horizon = readInt("p-horizon", 40);
+    state.buyPct = readNum("p-buy", 0);
+    // PL slope is constant — Santostasi β5.566 — no longer user-tunable
+    state.slope = 5.566;
+  }
+
+  // ─── STATUS ──────────────────────────────────────────────
+  function renderStatus(sim) {
+    var verdictEl = $("verdict");
+    var msgEl = $("verdict-msg");
+    if (sim.firstFail) {
+      var yrsLasted = sim.firstFail - sim.retireYr;
+      verdictEl.textContent = "DEPLETES " + sim.firstFail;
+      verdictEl.className = "status-verdict bad";
+      setHTML("verdict-msg",
+        "Your <b>" + state.btc + "₿</b> stack can't fund the budget past <b class=\"bad\">" + sim.firstFail +
+        "</b> — collateral runs out " + yrsLasted + " years into retirement. " +
+        "Try fewer expenses, a later retire year, or a bigger stack.");
+    } else {
+      // Strong = peak LTV stayed well under safe; tight = approached safe; ok = under
+      var safe = state.ltv;
+      if (sim.peakLtv < safe * 0.6) {
+        verdictEl.textContent = "STRONG";
+        verdictEl.className = "status-verdict good";
+      } else if (sim.peakLtv < safe * 0.9) {
+        verdictEl.textContent = "HOLDS";
+        verdictEl.className = "status-verdict good";
+      } else {
+        verdictEl.textContent = "TIGHT";
+        verdictEl.className = "status-verdict warn";
+      }
+      var endCold = sim.finalCold;
+      var pctCold = sim.finalStack > 0 ? Math.round((endCold / sim.finalStack) * 100) : 0;
+      var dcaLine = sim.btcBought > 0.001
+        ? " Strategy added <b class=\"good\">+" + btcFmt(sim.btcBought) + "₿</b> to your stack via borrow-and-buy (final: " + btcFmt(sim.finalStack) + "₿)."
+        : "";
+      setHTML("verdict-msg",
+        "Your <b>" + state.btc + "₿</b> stack funds <b>" + money(state.budget) + "/yr</b> from <b>" + sim.retireYr +
+        "</b> through <b>" + sim.endYr + "</b>." + dcaLine +
+        " At horizon, <b class=\"good\">" + btcFmt(endCold) + "₿</b> (" + pctCold + "% of stack) is unpledged — free to move, sell, or self-custody.");
+    }
+
+    setText("m-lasts", sim.firstFail ? String(sim.firstFail) : String(sim.endYr));
+    $("m-lasts").className = "val " + (sim.firstFail ? "bad" : "good");
+    setText("m-back", btcFmt(sim.finalCold) + "₿");
+    $("m-back").className = "val " + (sim.finalCold > 0.001 ? "good" : "");
+    setText("m-peak", sim.peakLtv > 0 ? sim.peakLtv.toFixed(0) + "%" : "—");
+    $("m-peak").className = "val " + (sim.peakLtv > state.ltv * 0.9 ? "warn" : "good");
+  }
+
+  // ─── CHART ───────────────────────────────────────────────
+  function drawChart(sim) {
+    var svg = $("chart");
+    if (!svg) return;
+    var W = 400, H = 200;
+    var pL = 44, pR = 12, pT = 10, pB = 26;
+    var cW = W - pL - pR, cH = H - pT - pB;
+    var rows = sim.rows;
+    if (!rows.length) { svg.innerHTML = ""; return; }
+
+    var startYr = rows[0].year, endYr = rows[rows.length - 1].year;
+    var retireYr = sim.retireYr;
+
+    // Truncate at first-fail year for charting — beyond failure the simulation
+    // keeps allocating pledged BTC the user doesn't actually have, which makes
+    // the chart show an unreal 2-3× pledged tower past the plan's break point.
+    // The red ✕ marker still tells the user where it failed.
+    var chartRows = rows;
+    if (sim.firstFail) {
+      var failIdx = -1;
+      for (var ci = 0; ci < rows.length; ci++) {
+        if (rows[ci].year === sim.firstFail) { failIdx = ci; break; }
+      }
+      if (failIdx > 0) chartRows = rows.slice(0, failIdx + 1);
+    }
+
+    // y range: clip to user's actual BTC stack — the simulation can mathematically
+    // report pledged > stack past failure, but that's not real, so don't scale to it.
+    var yMax = state.btc;
+    for (var yi = 0; yi < chartRows.length; yi++) {
+      var top = chartRows[yi].cold + chartRows[yi].pledged;
+      if (top > yMax) yMax = top;
+    }
+    yMax *= 1.05;
+    if (yMax <= 0) yMax = 1;
+
+    function xp(yr) { return pL + ((yr - startYr) / (endYr - startYr)) * cW; }
+    function yp(v) { return pT + (1 - v / yMax) * cH; }
+
+    // Stacked areas: green (cold, 0 → cold), blue (pledged, cold → cold+pledged)
+    function buildArea(rs, hi, lo) {
+      var s = "";
+      for (var i = 0; i < rs.length; i++) {
+        s += (i === 0 ? "M" : "L") + xp(rs[i].year).toFixed(1) + "," + yp(hi(rs[i])).toFixed(1) + " ";
+      }
+      for (var j = rs.length - 1; j >= 0; j--) {
+        s += "L" + xp(rs[j].year).toFixed(1) + "," + yp(lo(rs[j])).toFixed(1) + " ";
+      }
+      return s + "Z";
+    }
+    function buildLine(rs, val) {
+      var s = "";
+      for (var i = 0; i < rs.length; i++) {
+        s += (i === 0 ? "M" : "L") + xp(rs[i].year).toFixed(1) + "," + yp(val(rs[i])).toFixed(1) + " ";
+      }
+      return s;
+    }
+
+    // Pledged starts mid-timeline. Prepend an anchor at the prior year with
+    // pledged=0 so the line rises smoothly from zero instead of starting mid-air.
+    var firstPledgedIdx = -1;
+    for (var fi = 0; fi < chartRows.length; fi++) {
+      if (chartRows[fi].pledged > 1e-8) { firstPledgedIdx = fi; break; }
+    }
+    var pledgedRows = [];
+    if (firstPledgedIdx >= 0) {
+      var anchorYear = firstPledgedIdx > 0 ? chartRows[firstPledgedIdx - 1].year : chartRows[firstPledgedIdx].year - 1;
+      pledgedRows.push({ year: anchorYear, pledged: 0 });
+      for (var pi = firstPledgedIdx; pi < chartRows.length; pi++) pledgedRows.push(chartRows[pi]);
+    }
+
+    var coldLineD = buildLine(chartRows, function(r){ return r.cold; });
+    // Pledged: only draw the line from the first year pledged is non-zero,
+    // with an anchor at the prior year (or just-before, if it's the first row)
+    // so it visually rises from zero. Avoids a vertical wall on day one.
+    var pledgedLineD = "";
+    if (pledgedRows.length > 1) {
+      pledgedLineD = buildLine(pledgedRows, function(r){ return r.pledged; });
+    }
+
+    // Stack reference line — the total BTC, always state.btc
+    var stackY = yp(state.btc);
+    var stackRef = '<line stroke="#7a6a52" stroke-width="1" stroke-dasharray="2 4" x1="' + pL + '" y1="' + stackY.toFixed(1) + '" x2="' + (W - pR) + '" y2="' + stackY.toFixed(1) + '"/>' +
+                   '<text class="cl" x="' + (W - pR - 4) + '" y="' + (stackY - 4).toFixed(1) + '" text-anchor="end">stack ' + btcFmt(state.btc) + '₿</text>';
+
+    var ticks = "";
+    for (var ti = 0; ti <= 4; ti++) {
+      var v = yMax * (1 - ti / 4);
+      var y = pT + (ti / 4) * cH;
+      ticks += '<line class="cg" x1="' + pL + '" y1="' + y.toFixed(1) + '" x2="' + (W - pR) + '" y2="' + y.toFixed(1) + '"/>';
+      ticks += '<text class="cl" x="' + (pL - 4) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end">' + btcFmt(v) + '₿</text>';
+    }
+    var xticks = "";
+    var step = Math.max(2, Math.ceil((endYr - startYr) / 6));
+    for (var yr = startYr; yr <= endYr; yr += step) {
+      xticks += '<text class="cl" x="' + xp(yr).toFixed(1) + '" y="' + (H - pB + 14) + '" text-anchor="middle">' + yr + '</text>';
+    }
+    if ((endYr - startYr) % step !== 0) {
+      xticks += '<text class="cl" x="' + xp(endYr).toFixed(1) + '" y="' + (H - pB + 14) + '" text-anchor="middle">' + endYr + '</text>';
+    }
+
+    var retireMark = "";
+    if (retireYr >= startYr && retireYr <= endYr) {
+      var rx = xp(retireYr);
+      retireMark = '<line stroke="#f7931a" stroke-width="1" stroke-dasharray="2 3" opacity="0.6" x1="' + rx.toFixed(1) +
+                   '" y1="' + pT + '" x2="' + rx.toFixed(1) + '" y2="' + (H - pB) + '"/>' +
+                   '<text class="cl" fill="#f7931a" x="' + rx.toFixed(1) + '" y="' + (pT + 9) + '" text-anchor="middle">retire</text>';
+    }
+    var fail = "";
+    if (sim.firstFail) {
+      var fx = xp(sim.firstFail);
+      fail = '<line stroke="#ff5a5a" stroke-width="1.5" stroke-dasharray="2 3" x1="' + fx.toFixed(1) +
+             '" y1="' + pT + '" x2="' + fx.toFixed(1) + '" y2="' + (H - pB) + '"/>' +
+             '<text class="cl" fill="#ff5a5a" font-weight="700" x="' + (fx + 3).toFixed(1) + '" y="' + (pT + 9) + '">✕ ' + sim.firstFail + '</text>';
+    }
+
+    // Light fill under cold line for at-a-glance "your free sats"
+    var coldFillD = "";
+    if (chartRows.length > 1) {
+      coldFillD = buildLine(chartRows, function(r){ return r.cold; });
+      // Close the path along the x-axis
+      coldFillD += " L" + xp(chartRows[chartRows.length - 1].year).toFixed(1) + "," + yp(0).toFixed(1) +
+                   " L" + xp(chartRows[0].year).toFixed(1) + "," + yp(0).toFixed(1) + " Z";
+    }
+
+    svg.innerHTML =
+      '<defs>' +
+      '<linearGradient id="gc" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#5fe88f" stop-opacity="0.18"/>' +
+      '<stop offset="100%" stop-color="#5fe88f" stop-opacity="0.02"/>' +
+      '</linearGradient>' +
+      '</defs>' +
+      ticks + xticks +
+      stackRef +
+      (coldFillD ? '<path d="' + coldFillD + '" fill="url(#gc)"/>' : '') +
+      '<path d="' + coldLineD + '" fill="none" stroke="#5fe88f" stroke-width="2.5"/>' +
+      (pledgedLineD ? '<path d="' + pledgedLineD + '" fill="none" stroke="#6ec5ff" stroke-width="2.5"/>' : '') +
+      retireMark + fail;
+  }
+
+  // ─── TABLE ───────────────────────────────────────────────
+  function renderTable(rows) {
+    var tbody = $("tbody");
+    if (!tbody) return;
+    var html = "";
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var isPre = r.status === "pre";
+      var paused = r.isPaused;
+      var debtOvr = state.debtOvr[r.year] !== undefined;
+      var rcOvr = state.rcOvr[r.year] !== undefined;
+      var rowCls = paused ? "paused" : r.status;
+      if (r.isRetire) rowCls += " retire";
+
+      var dCls = "c-debt" + (debtOvr ? " ovr" : "");
+      var dLbl = r.debt > 0.5 ? money(r.debt) : (isPre ? "+ borrow" : "$0");
+      var debtCell = '<button class="edit-btn ' + dCls + '" data-kind="debt" data-yr="' + r.year + '" data-val="' + r.debt + '" data-auto="' + r.autoDebt + '">' + dLbl + '</button>';
+
+      var coldCls = "c-cold" + (rcOvr ? " ovr" : (r.cold > 1e-8 ? "" : " zero"));
+      var coldLbl = r.cold > 1e-8 ? btcFmt(r.cold) + "₿" : "—";
+      var coldCell = '<button class="edit-btn ' + coldCls + '" data-kind="cold" data-yr="' + r.year + '" data-val="' + r.back + '" data-auto="' + r.autoBack + '">' + coldLbl + '</button>';
+
+      var ltvCls = "c-ltv " + (isPre && r.debt < 1 ? "" : r.status);
+      var ltvDisp = r.ltv > 0 ? r.ltv.toFixed(0) + "%" : "—";
+
+      var borrowDisp = r.borrow > 0.5
+        ? money(r.borrow)
+        : "—";
+      var borrowCls = r.borrow > 0.5 ? "c-borrow" : "c-borrow zero";
+      var borrowTitle = r.borrow > 0.5
+        ? "budget " + money(r.exp) + " + interest " + money(r.interest)
+        : "";
+
+      var ltvTitle = r.ltv > 0
+        ? "Aggregate: " + money(r.debt) + " debt ÷ " + money(r.stack) + " stack"
+        : "";
+
+      html += '<tr class="' + rowCls + '" data-yr="' + r.year + '" data-pausable="' + (isPre ? 0 : 1) + '">';
+      html += '<td>' + r.year + '</td>';
+      html += '<td class="c-price">' + money(r.price) + '</td>';
+      html += '<td class="c-stack">' + money(r.stack) + '</td>';
+      html += '<td class="' + borrowCls + '" title="' + borrowTitle + '">' + borrowDisp + '</td>';
+      html += '<td>' + debtCell + '</td>';
+      html += '<td style="color:var(--blue);font-weight:600">' + (r.pledged > 1e-8 ? btcFmt(r.pledged) + "₿" : "—") + '</td>';
+      html += '<td>' + coldCell + '</td>';
+      html += '<td class="' + ltvCls + '" title="' + ltvTitle + '">' + ltvDisp + '</td>';
+      html += '</tr>';
+    }
+    tbody.innerHTML = html;
+
+    var trs = tbody.getElementsByTagName("tr");
+    for (var ti = 0; ti < trs.length; ti++) {
+      (function (tr) {
+        if (tr.getAttribute("data-pausable") !== "1") return;
+        tr.addEventListener("click", function (e) {
+          var tgt = e.target;
+          while (tgt && tgt !== tr) {
+            if (tgt.classList && (tgt.classList.contains("edit-btn") || tgt.classList.contains("edit-input"))) return;
+            tgt = tgt.parentNode;
+          }
+          var yr = parseInt(tr.getAttribute("data-yr"), 10);
+          if (state.pauses[yr]) delete state.pauses[yr];
+          else state.pauses[yr] = true;
+          delete state.rcOvr[yr];
+          delete state.debtOvr[yr];
+          renderAll();
+        });
+      })(trs[ti]);
+    }
+    var btns = tbody.getElementsByClassName("edit-btn");
+    for (var bi = 0; bi < btns.length; bi++) {
+      (function (btn) {
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var kind = btn.getAttribute("data-kind");
+          var yr = parseInt(btn.getAttribute("data-yr"), 10);
+          var auto = parseFloat(btn.getAttribute("data-auto"));
+          var cur = parseFloat(btn.getAttribute("data-val"));
+
+          var inp = document.createElement("input");
+          inp.type = "number";
+          inp.className = "edit-input";
+          inp.value = kind === "debt" ? Math.round(cur) : (cur > 1e-8 ? cur.toFixed(6) : "0");
+          inp.step = kind === "debt" ? "1000" : "0.0001";
+          inp.min = "0";
+          btn.parentNode.replaceChild(inp, btn);
+          setTimeout(function () { inp.focus(); inp.select(); }, 0);
+
+          var done = false;
+          function commit() {
+            if (done) return;
+            done = true;
+            if (inp._cancel) return;
+            var v = parseFloat(inp.value);
+            if (kind === "debt") {
+              if (isNaN(v) || Math.abs(v - auto) < 1) delete state.debtOvr[yr];
+              else state.debtOvr[yr] = v;
+            } else {
+              if (isNaN(v) || Math.abs(v - auto) < 1e-9) delete state.rcOvr[yr];
+              else state.rcOvr[yr] = Math.max(0, Math.min(v, auto));
+            }
+            renderAll();
+          }
+          inp.addEventListener("blur", commit);
+          inp.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); inp.blur(); }
+            else if (e.key === "Escape" || e.keyCode === 27) { e.preventDefault(); done = true; renderAll(); }
+          });
+        });
+      })(btns[bi]);
+    }
+  }
+
+  // ─── RENDER ALL ──────────────────────────────────────────
+  function renderAll() {
+    readInputs();
+    var sim = simulate();
+    renderStatus(sim);
+    drawChart(sim);
+    renderTable(sim.rows);
+  }
+
+  // ─── BINDINGS ────────────────────────────────────────────
+  var ids = ["p-btc","p-px","p-yr","p-budget","p-buy","p-inf","p-apr1","p-apr0","p-ltv","p-rc","p-horizon"];
+  for (var i = 0; i < ids.length; i++) {
+    (function (id) {
+      var el = $(id);
+      if (el) el.addEventListener("input", renderAll);
+    })(ids[i]);
+  }
+
+  function doReset() {
+    var live = document.getElementsByClassName("edit-input");
+    while (live.length > 0) { live[0]._cancel = true; live[0].blur(); }
+    state.pauses = {};
+    state.debtOvr = {};
+    state.rcOvr = {};
+    renderAll();
+  }
+  var rb = $("reset");
+  rb.addEventListener("mousedown", function (e) { e.preventDefault(); doReset(); });
+  rb.addEventListener("touchstart", function (e) { e.preventDefault(); doReset(); }, { passive: false });
+  rb.addEventListener("click", doReset);
+
+  // ─── INIT ────────────────────────────────────────────────
+  renderAll();
+})();
+</script>
+</body>
+</html>
